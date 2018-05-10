@@ -15,6 +15,37 @@ sealed class TestRunner {
     data class ParseError(val error: String) : TestRunner()
 }
 
+
+sealed class AppPackage {
+    data class Valid(val value: String) : AppPackage()
+    data class ParseError(val error: String) : AppPackage()
+}
+
+
+fun parseAppPackage(appApkPath: String): AppPackage =
+        process(
+                commandAndArgs = listOf(
+                        aapt, "dump", "badging", appApkPath
+                ),
+                unbufferedOutput = true
+        )
+                .ofType(Notification.Exit::class.java)
+                .map { (output) ->
+                    output
+                            .readText()
+                            .split(System.lineSeparator())
+                            .firstOrNull { it.contains("package") }
+                            ?.split(" ")
+                            ?.firstOrNull { it.startsWith("name=") }
+                            ?.split("'")
+                            ?.getOrNull(1)
+                            ?.let(AppPackage::Valid)
+                            ?: AppPackage.ParseError("Cannot parse app package from `aapt dump badging \$APK` output.")
+                }
+                .toSingle()
+                .toBlocking()
+                .value()
+
 fun parseTestPackage(testApkPath: String): TestPackage =
         process(
                 commandAndArgs = listOf(
