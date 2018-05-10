@@ -1,8 +1,8 @@
 package com.gojuno.composer
 
-import com.gojuno.commander.android.aapt
-import com.gojuno.commander.os.Notification
-import com.gojuno.commander.os.process
+import com.gojuno.composer.os.Notification
+import com.gojuno.composer.os.android.aapt
+import com.gojuno.composer.os.process
 import com.linkedin.dex.parser.DexParser
 
 sealed class TestPackage {

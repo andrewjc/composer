@@ -1,14 +1,15 @@
-package com.gojuno.composer
+package com.gojuno.composer.os.android
 
-import com.gojuno.commander.android.AdbDevice
-import com.gojuno.commander.os.Notification
-import com.gojuno.commander.os.log
-import com.gojuno.commander.os.process
+import com.gojuno.composer.*
+import com.gojuno.composer.os.Notification
+import com.gojuno.composer.os.log
+import com.gojuno.composer.os.process
 import rx.Observable
 import rx.Single
 import java.io.File
-import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MINUTES
+import java.util.concurrent.TimeUnit.SECONDS
 
 val androidHome: String by lazy { requireNotNull(System.getenv("ANDROID_HOME")) { "Please specify ANDROID_HOME env variable" } }
 val adb: String by lazy { "$androidHome/platform-tools/adb" }
@@ -72,9 +73,9 @@ fun connectedAdbDevices(): Observable<Set<AdbDevice>> = process(listOf(adb, "dev
         .map { it.toSet() }
         .doOnError { log("Error during getting connectedAdbDevices, error = $it") }
 
-fun AdbDevice.log(message: String) = println("[${Date()}]: [$id] $message")
+fun AdbDevice.log(message: String) = com.gojuno.composer.os.log("[$id] $message")
 
-fun AdbDevice.installApk(pathToApk: String, timeout: Pair<Int, TimeUnit> = 2 to TimeUnit.MINUTES): Observable<Unit> {
+fun AdbDevice.installApk(pathToApk: String, timeout: Pair<Int, TimeUnit> = 2 to MINUTES): Observable<Unit> {
     val adbDevice = this
 
     val packageName: String = parseAppPackage(pathToApk).let {
@@ -126,7 +127,7 @@ fun AdbDevice.installApk(pathToApk: String, timeout: Pair<Int, TimeUnit> = 2 to 
             .doOnError { adbDevice.log("Error during installing apk: $it, pathToApk = $pathToApk") }
 }
 
-fun AdbDevice.pullFolder(folderOnDevice: String, folderOnHostMachine: File, logErrors: Boolean, timeout: Pair<Int, TimeUnit> = 60 to TimeUnit.SECONDS): Single<Boolean> {
+fun AdbDevice.pullFolder(folderOnDevice: String, folderOnHostMachine: File, logErrors: Boolean, timeout: Pair<Int, TimeUnit> = 60 to SECONDS): Single<Boolean> {
     val adbDevice = this
     val pullFiles = process(
             commandAndArgs = listOf(adb, "-s", adbDevice.id, "pull", folderOnDevice, folderOnHostMachine.absolutePath),

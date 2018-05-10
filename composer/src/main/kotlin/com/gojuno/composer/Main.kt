@@ -1,13 +1,13 @@
 package com.gojuno.composer
 
-import com.gojuno.commander.android.adb
-import com.gojuno.commander.android.connectedAdbDevices
-import com.gojuno.commander.android.installApk
-import com.gojuno.commander.os.Notification
-import com.gojuno.commander.os.log
-import com.gojuno.commander.os.nanosToHumanReadableTime
-import com.gojuno.commander.os.process
 import com.gojuno.composer.html.writeHtmlReport
+import com.gojuno.composer.os.Notification
+import com.gojuno.composer.os.android.adb
+import com.gojuno.composer.os.android.connectedAdbDevices
+import com.gojuno.composer.os.android.installApk
+import com.gojuno.composer.os.log
+import com.gojuno.composer.os.nanosToHumanReadableTime
+import com.gojuno.composer.os.process
 import com.google.gson.Gson
 import rx.Observable
 import rx.schedulers.Schedulers

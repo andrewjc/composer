@@ -11,8 +11,6 @@ dependencies {
     compile libraries.kotlinStd
     compile libraries.rxJava
     compile libraries.jCommander
-    compile libraries.commanderOs
-    compile libraries.commanderAndroid
     compile libraries.apacheCommonsIo
     compile libraries.apacheCommonsLang
     compile libraries.gson

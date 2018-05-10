@@ -1,7 +1,7 @@
 package com.gojuno.composer.html
 
-import com.gojuno.commander.android.AdbDevice
 import com.gojuno.composer.AdbDeviceTest
+import com.gojuno.composer.os.android.AdbDevice
 import com.gojuno.composer.testFile
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
