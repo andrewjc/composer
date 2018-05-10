@@ -75,6 +75,14 @@ data class Args(
         var keepOutputOnExit: Boolean = false,
 
         @Parameter(
+                names = arrayOf("--remote-hosts"),
+                required = false,
+                description = "Provides a list of hostnames to connect to.",
+                order = 10
+        )
+        var remoteHostFilename: String = "",
+
+        @Parameter(
                 names = arrayOf("--devices"),
                 required = false,
                 variableArity = true,
