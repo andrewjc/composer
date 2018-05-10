@@ -1,5 +1,7 @@
 ## Composer — Reactive Android Instrumentation Test Runner.
 
+This is a fork of Composer, that allows you to run tests on remote Emulators running in Amazon EC2. It adds a --remote-host parameter and uses ssh tunnels and adb connect to do it's magic.
+
 Composer is a modern reactive replacement for [square/spoon][spoon] with following feature set:
 
 * Parallel test execution on multiple emulators/devices with [test sharding][test sharding] support.
@@ -126,7 +128,9 @@ Simplest :
 ```console
 java -jar composer-latest-version.jar \
 --apk app/build/outputs/apk/example-debug.apk \
---test-apk app/build/outputs/apk/example-debug-androidTest.apk
+--test-apk app/build/outputs/apk/example-debug-androidTest.apk \
+--remote-hosts emulators.txt \
+--install-timeout 300
 ```
 
 With arguments :
@@ -138,7 +142,21 @@ java -jar composer-latest-version.jar \
 --output-directory artifacts/composer-output \
 --instrumentation-arguments key1 value1 key2 value2 \
 --verbose-output false \
---keep-output-on-exit false
+--keep-output-on-exit false \
+--remote-hosts emulators.txt \
+--install-timeout 300
+```
+
+Format of emulators.txt :
+```
+ip-address #comment/hostname/notes
+```
+
+eg:
+
+```
+192.168.0.6 #android-6-nexus6
+192.168.0.7 #android-7-nexus6
 ```
 
 ### Download

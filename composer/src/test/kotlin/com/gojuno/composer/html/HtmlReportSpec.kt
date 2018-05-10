@@ -1,9 +1,9 @@
 package com.gojuno.composer.html
 
-import com.gojuno.commander.android.AdbDevice
 import com.gojuno.composer.AdbDeviceTest
 import com.gojuno.composer.Device
 import com.gojuno.composer.Suite
+import com.gojuno.composer.os.android.AdbDevice
 import com.gojuno.composer.perform
 import com.google.gson.Gson
 import org.assertj.core.api.Assertions.assertThat

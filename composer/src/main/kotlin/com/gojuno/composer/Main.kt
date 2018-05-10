@@ -1,14 +1,18 @@
 package com.gojuno.composer
 
-import com.gojuno.commander.android.connectedAdbDevices
-import com.gojuno.commander.android.installApk
-import com.gojuno.commander.os.log
-import com.gojuno.commander.os.nanosToHumanReadableTime
 import com.gojuno.composer.html.writeHtmlReport
+import com.gojuno.composer.os.Notification
+import com.gojuno.composer.os.android.adb
+import com.gojuno.composer.os.android.connectedAdbDevices
+import com.gojuno.composer.os.android.installApk
+import com.gojuno.composer.os.log
+import com.gojuno.composer.os.nanosToHumanReadableTime
+import com.gojuno.composer.os.process
 import com.google.gson.Gson
 import rx.Observable
 import rx.schedulers.Schedulers
 import java.io.File
+import java.io.InputStream
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -62,6 +66,8 @@ fun main(rawArgs: Array<String>) {
                 }
             }
 
+    connectToAllDevices(args)
+
     val suites = runAllTests(args, testPackage, testRunner)
 
     val duration = (System.nanoTime() - startTime)
@@ -80,6 +86,76 @@ fun main(rawArgs: Array<String>) {
 
     log("Test run finished took ${duration.nanosToHumanReadableTime()}.")
     exit(Exit.Ok)
+}
+
+sealed class RemoteHostState {
+    object Online : RemoteHostState()
+    object Offline : RemoteHostState()
+    object Working : RemoteHostState()
+    object Unknown : RemoteHostState()
+}
+
+data class RemoteHost(
+        var ip: String,
+        var state: RemoteHostState,
+        var localSshPort: Int,
+        var localSshProcessId: Int
+)
+
+private fun connectToAllDevices(args: Args) {
+    var inputStream: InputStream = File(args.remoteHostFilename).inputStream()
+    var lines = mutableListOf<String>()
+
+    inputStream.bufferedReader().useLines { fileLine -> fileLine.forEach { lines.add(it) } }
+
+    var remoteHostList = mutableListOf<RemoteHost>()
+
+    lines.forEach {
+        var dd = it.substringBefore("#").trim()
+
+        remoteHostList.add(RemoteHost(dd, RemoteHostState.Unknown, 0, 0))
+    }
+
+    var localSshPort: Int = 5555
+
+    Observable.from(remoteHostList)
+            .map { rm ->
+                localSshPort++
+
+                val process = process(
+                        commandAndArgs = listOf("ssh", "-f", "-C", "-NL", "$localSshPort:localhost:5555", "shell@${rm.ip}"),
+                        unbufferedOutput = true
+                )
+
+                process
+                        .ofType(Notification.Exit::class.java)
+                        .doOnError { error -> log("Failed to establish ssh tunnel to ${rm.ip}: $error") }
+                        .map {
+                            log("Established ssh on port: $localSshPort")
+
+                            val adbProcess = process(
+                                    commandAndArgs = listOf(adb, "connect", "localhost:$localSshPort"),
+                                    unbufferedOutput = true
+                            )
+
+                            adbProcess
+                                    .ofType(Notification.Exit::class.java)
+                                    .retry(3)
+                                    .doOnError { error -> log("Failed to connect to emulator on port $localSshPort: $error") }
+                                    .map { true }
+                                    .onErrorReturn { false }
+                                    .toSingle()
+                                    .toBlocking()
+                                    .value()
+                        }
+                        .onErrorReturn { null }
+                        .toSingle()
+                        .toBlocking()
+                        .value()
+            }
+            .toBlocking()
+            .last()
+
 }
 
 private fun runAllTests(args: Args, testPackage: TestPackage.Valid, testRunner: TestRunner.Valid): List<Suite> {

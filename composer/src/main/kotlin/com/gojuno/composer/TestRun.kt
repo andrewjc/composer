@@ -1,9 +1,9 @@
 package com.gojuno.composer
 
-import com.gojuno.commander.android.*
-import com.gojuno.commander.os.Notification
-import com.gojuno.commander.os.nanosToHumanReadableTime
-import com.gojuno.commander.os.process
+import com.gojuno.composer.os.Notification
+import com.gojuno.composer.os.android.*
+import com.gojuno.composer.os.nanosToHumanReadableTime
+import com.gojuno.composer.os.process
 import rx.Observable
 import rx.Single
 import rx.schedulers.Schedulers
