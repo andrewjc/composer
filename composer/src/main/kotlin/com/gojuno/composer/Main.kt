@@ -104,22 +104,10 @@ data class RemoteHost(
 )
 
 private fun connectToAllDevices(args: Args) {
-    var inputStream: InputStream = File(args.remoteHostFilename).inputStream()
-    var lines = mutableListOf<String>()
 
-    inputStream.bufferedReader().useLines { fileLine -> fileLine.forEach { lines.add(it) } }
+    var localSshPort: Int = 5050
 
-    var remoteHostList = mutableListOf<RemoteHost>()
-
-    lines.forEach {
-        var dd = it.substringBefore("#").trim()
-
-        remoteHostList.add(RemoteHost(dd, RemoteHostState.Unknown, 0, 0))
-    }
-
-    var localSshPort: Int = 5555
-
-    Observable.from(remoteHostList)
+    Observable.from(getRemoteHostList(args))
             .map { rm ->
                 localSshPort++
 
@@ -161,6 +149,7 @@ private fun connectToAllDevices(args: Args) {
 
 private fun runAllTests(args: Args, testPackage: TestPackage.Valid, testRunner: TestRunner.Valid): List<Suite> {
     val gson = Gson()
+
 
     return connectedAdbDevices()
             .map { devices ->
@@ -262,6 +251,29 @@ private fun runAllTests(args: Args, testPackage: TestPackage.Valid, testRunner: 
             }
             .toBlocking()
             .first()
+}
+
+fun getRemoteHostList(args: Args): List<RemoteHost> {
+
+    var remoteHostList = mutableListOf<RemoteHost>()
+
+    if ( args.remoteHostFilename.isEmpty() ) return remoteHostList
+    if ( !File(args.remoteHostFilename).isFile )  return remoteHostList
+
+    var inputStream: InputStream = File(args.remoteHostFilename).inputStream()
+    var lines = mutableListOf<String>()
+
+    inputStream.bufferedReader().useLines { fileLine -> fileLine.forEach { lines.add(it) } }
+
+    lines.forEach {
+        var dd = it.substringBefore("#").trim()
+
+        remoteHostList.add(RemoteHost(dd, RemoteHostState.Unknown, 0, 0))
+    }
+
+    inputStream.close()
+
+    return remoteHostList
 }
 
 private fun List<String>.pairArguments(): List<Pair<String, String>> =
