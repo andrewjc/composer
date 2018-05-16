@@ -66,7 +66,8 @@ fun main(rawArgs: Array<String>) {
                 }
             }
 
-    connectToAllDevices(args)
+    if(!args.remoteHostFilename.isEmpty())
+        connectToAllDevices(args)
 
     val suites = runAllTests(args, testPackage, testRunner)
 

@@ -3,6 +3,7 @@ package com.gojuno.composer.os.android
 import com.gojuno.composer.*
 import com.gojuno.composer.os.Notification
 import com.gojuno.composer.os.log
+import com.gojuno.composer.os.nanosToHumanReadableTime
 import com.gojuno.composer.os.process
 import rx.Observable
 import rx.Single
@@ -102,7 +103,7 @@ fun AdbDevice.installApk(pathToApk: String, timeout: Pair<Int, TimeUnit> = 2 to 
     return Observable
             .fromCallable { System.nanoTime() }
             .flatMap { startTimeNanos -> pushApkProcess.ofType(Notification.Exit::class.java).map { it to startTimeNanos } }
-            .flatMap { startTimeNanos -> installApkProcess.ofType(Notification.Exit::class.java).map { it to startTimeNanos}}
+            .flatMap { startTimeNanos -> installApkProcess.ofType(Notification.Exit::class.java).map { it to startTimeNanos }}
             .map { (exit, startTimeNanos) ->
                 val success = exit
                         .output
@@ -112,9 +113,11 @@ fun AdbDevice.installApk(pathToApk: String, timeout: Pair<Int, TimeUnit> = 2 to 
                         .filter { it.isNotEmpty() }
                         .firstOrNull { it.equals("Success", ignoreCase = true) } != null
 
+                val duration = System.nanoTime() - startTimeNanos.second
+
                 when (success) {
                     true -> {
-                        adbDevice.log("Successfully installed apk, pathToApk = $pathToApk")
+                        adbDevice.log("Successfully installed apk in ${duration.nanosToHumanReadableTime()}, pathToApk = $pathToApk")
                     }
 
                     false -> {

@@ -75,7 +75,7 @@ data class Args(
         var keepOutputOnExit: Boolean = false,
 
         @Parameter(
-                names = arrayOf("--remote-hosts"),
+                names = arrayOf("--remote-hosts-file"),
                 required = false,
                 description = "Provides a list of hostnames to connect to.",
                 order = 10
@@ -123,6 +123,12 @@ private val PARAMETER_HELP_NAMES = setOf("--help", "-help", "help", "-h")
 private fun validateArguments(args: Args) {
     if (!args.devicePattern.isEmpty() && !args.devices.isEmpty()) {
         throw IllegalArgumentException("Specifying both --devices and --device-pattern is prohibited.")
+    }
+    if (!args.remoteHostFilename.isEmpty() && !args.devices.isEmpty()) {
+        throw IllegalArgumentException("Specifying both --remote-host-filename and --device is prohibited.")
+    }
+    if (!args.remoteHostFilename.isEmpty() && !args.devicePattern.isEmpty()) {
+        throw IllegalArgumentException("Specifying both --remote-host-filename and --device-pattern is prohibited.")
     }
 }
 
