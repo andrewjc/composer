@@ -66,9 +66,6 @@ fun main(rawArgs: Array<String>) {
                 }
             }
 
-    if(!args.remoteHostFilename.isEmpty())
-        connectToAllDevices(args)
-
     val suites = runAllTests(args, testPackage, testRunner)
 
     val duration = (System.nanoTime() - startTime)
@@ -86,6 +83,7 @@ fun main(rawArgs: Array<String>) {
     }
 
     log("Test run finished took ${duration.nanosToHumanReadableTime()}.")
+
     exit(Exit.Ok)
 }
 
@@ -103,55 +101,63 @@ data class RemoteHost(
         var localSshProcessId: Int
 )
 
-private fun connectToAllDevices(args: Args) {
+data class SslContext(var localSshPort: Int)
 
-    var localSshPort: Int = 5050
+fun sslTunnel(currentItem: RemoteHost): Observable<SslContext>? {
+    val localSshPort = getNextSshPort()
 
-    Observable.from(getRemoteHostList(args))
-            .map { rm ->
-                localSshPort++
+    val process = process(
+            commandAndArgs = listOf("ssh", "-f", "-C", "-NL", "$localSshPort:localhost:5555", "shell@${currentItem.ip}"),
+            unbufferedOutput = true,
+            print = false,
+            destroyOnUnsubscribe = true
+    )
 
-                val process = process(
-                        commandAndArgs = listOf("ssh", "-f", "-C", "-NL", "$localSshPort:localhost:5555", "shell@${rm.ip}"),
-                        unbufferedOutput = true
-                )
+    return process
+        .ofType(Notification.Exit::class.java)
+        .map { _ -> SslContext(localSshPort)}
+        .doOnError { error -> log("Failed to establish ssh tunnel to ${currentItem.ip}: $error") }
+        .onErrorReturn { null }
 
-                process
-                        .ofType(Notification.Exit::class.java)
-                        .doOnError { error -> log("Failed to establish ssh tunnel to ${rm.ip}: $error") }
-                        .map {
-                            log("Established ssh on port: $localSshPort")
+}
 
-                            val adbProcess = process(
-                                    commandAndArgs = listOf(adb, "connect", "localhost:$localSshPort"),
-                                    unbufferedOutput = true
-                            )
+fun adbConnect(currentItem: SslContext): Observable<Notification.Exit>? {
+    return process(
+            commandAndArgs = listOf(adb, "connect", "localhost:${currentItem.localSshPort}"),
+            unbufferedOutput = true,
+            print = false,
+            destroyOnUnsubscribe = false
+    )
+            .retry(3)
+            .flatMap { it -> process(
+                    commandAndArgs = listOf(adb, "-s", "localhost:${currentItem.localSshPort}", "wait-for-device"),
+                    unbufferedOutput = true,
+                    print = false,
+                    destroyOnUnsubscribe = false
+            )}.ofType(Notification.Exit::class.java)
+            .retry(3)
+            .doOnCompleted { log("Connected to ${currentItem.localSshPort}") }
+}
 
-                            adbProcess
-                                    .ofType(Notification.Exit::class.java)
-                                    .retry(3)
-                                    .doOnError { error -> log("Failed to connect to emulator on port $localSshPort: $error") }
-                                    .map { true }
-                                    .onErrorReturn { false }
-                                    .toSingle()
-                                    .toBlocking()
-                                    .value()
-                        }
-                        .onErrorReturn { null }
-                        .toSingle()
-                        .toBlocking()
-                        .value()
-            }
-            .toBlocking()
-            .last()
-
+var sshPortCounter : Int = 5000
+fun getNextSshPort(): Int {
+    return sshPortCounter++
 }
 
 private fun runAllTests(args: Args, testPackage: TestPackage.Valid, testRunner: TestRunner.Valid): List<Suite> {
     val gson = Gson()
 
-
-    return connectedAdbDevices()
+    return Observable.from(getRemoteHostList(args))
+            .flatMap {
+                currentItem -> sslTunnel(currentItem)
+            }
+            .flatMap {
+                sslContext -> adbConnect(sslContext)
+            }
+            .last()
+            .flatMap {
+                items -> connectedAdbDevices()
+            }
             .map { devices ->
                 when (args.devicePattern.isEmpty()) {
                     true -> devices
