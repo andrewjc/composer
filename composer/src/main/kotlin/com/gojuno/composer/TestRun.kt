@@ -9,6 +9,10 @@ import rx.Single
 import rx.schedulers.Schedulers
 import java.io.File
 
+data class AdbSshSession(
+        val sshPort: Int
+)
+
 data class AdbDeviceTestRun(
         val adbDevice: AdbDevice,
         val tests: List<AdbDeviceTest>,
