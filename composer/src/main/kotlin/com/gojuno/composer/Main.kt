@@ -10,8 +10,6 @@ import com.gojuno.composer.os.nanosToHumanReadableTime
 import com.gojuno.composer.os.process
 import com.google.gson.Gson
 import rx.Observable
-import rx.Scheduler
-import rx.observables.BlockingObservable
 import rx.schedulers.Schedulers
 import java.io.File
 import java.io.InputStream
@@ -86,9 +84,6 @@ fun main(rawArgs: Array<String>) {
 
     log("Test run finished took ${duration.nanosToHumanReadableTime()}.")
 
-
-    Thread.sleep(9999)
-
     exit(Exit.Ok)
 }
 
@@ -153,7 +148,7 @@ private fun runAllTests(args: Args, testPackage: TestPackage.Valid, testRunner: 
     val gson = Gson()
 
     return Observable.from(getRemoteHostList(args))
-            .flatMap { //RemoteHost -> SslContext
+            .flatMap {
                 currentItem -> sslTunnel(currentItem)
             }
             .flatMap {
