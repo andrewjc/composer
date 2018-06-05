@@ -83,6 +83,14 @@ data class Args(
         var remoteHostFilename: String = "",
 
         @Parameter(
+                names = arrayOf("--ssh-key"),
+                required = false,
+                description = "Specify the private key file to use when connecting to remote hosts over ssh",
+                order = 10
+        )
+        var remoteHostPrivateKeyFile: String = "",
+
+        @Parameter(
                 names = arrayOf("--devices"),
                 required = false,
                 variableArity = true,

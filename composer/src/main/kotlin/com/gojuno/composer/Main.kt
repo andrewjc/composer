@@ -96,6 +96,7 @@ sealed class RemoteHostState {
 
 data class RemoteHost(
         var ip: String,
+        var pkFile: String,
         var state: RemoteHostState,
         var localSshPort: Int,
         var localSshProcessId: Int
@@ -107,7 +108,7 @@ fun sslTunnel(currentItem: RemoteHost): Observable<SslContext>? {
     val localSshPort = getNextSshPort()
 
     val process = process(
-            commandAndArgs = listOf("ssh", "-f", "-C", "-NL", "$localSshPort:localhost:5555", "shell@${currentItem.ip}"),
+            commandAndArgs = getSslCommandLine(currentItem, localSshPort),
             unbufferedOutput = true,
             print = false,
             destroyOnUnsubscribe = true
@@ -119,6 +120,13 @@ fun sslTunnel(currentItem: RemoteHost): Observable<SslContext>? {
         .doOnError { error -> log("Failed to establish ssh tunnel to ${currentItem.ip}: $error") }
         .onErrorReturn { null }
 
+}
+
+fun getSslCommandLine(currentItem: RemoteHost, localSshPort: Int): List<String> {
+    if(currentItem.pkFile.isNullOrEmpty())
+        return listOf("ssh", "-f", "-C", "-NL", "$localSshPort:localhost:5555", "shell@${currentItem.ip}")
+    else
+        return listOf("ssh", "-i", currentItem.pkFile, "-f", "-C", "-NL", "$localSshPort:localhost:5555", "shell@${currentItem.ip}")
 }
 
 fun adbConnect(currentItem: SslContext): Observable<Notification.Exit>? {
@@ -274,7 +282,7 @@ fun getRemoteHostList(args: Args): List<RemoteHost> {
     lines.forEach {
         var dd = it.substringBefore("#").trim()
 
-        remoteHostList.add(RemoteHost(dd, RemoteHostState.Unknown, 0, 0))
+        remoteHostList.add(RemoteHost(dd, args.remoteHostPrivateKeyFile, RemoteHostState.Unknown, 0, 0))
     }
 
     inputStream.close()
