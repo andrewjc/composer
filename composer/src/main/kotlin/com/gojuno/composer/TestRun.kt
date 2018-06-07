@@ -13,18 +13,6 @@ data class AdbSshSession(
         val sshPort: Int
 )
 
-data class AdbDeviceTestRun(
-        val adbDevice: AdbDevice,
-        val tests: List<AdbDeviceTest>,
-        val passedCount: Int,
-        val ignoredCount: Int,
-        val failedCount: Int,
-        val durationNanos: Long,
-        val timestampMillis: Long,
-        val logcat: File,
-        val instrumentationOutput: File
-)
-
 data class AdbDeviceTest(
         val adbDevice: AdbDevice,
         val className: String,
@@ -41,6 +29,19 @@ data class AdbDeviceTest(
         data class Failed(val stacktrace: String) : Status()
     }
 }
+
+data class AdbDeviceTestRun(
+        val adbDevice: AdbDevice,
+        val tests: List<AdbDeviceTest>,
+        val passedCount: Int,
+        val ignoredCount: Int,
+        val failedCount: Int,
+        val durationNanos: Long,
+        val timestampMillis: Long,
+        val logcat: File,
+        val instrumentationOutput: File
+)
+
 
 fun AdbDevice.runTests(
         testPackageName: String,

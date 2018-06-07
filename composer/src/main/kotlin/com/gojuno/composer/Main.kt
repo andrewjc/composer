@@ -110,6 +110,32 @@ data class RemoteHostOptions(
 
 data class SslContext(var localSshPort: Int)
 
+
+fun getRemoteHostList(args: Args): List<RemoteHost> {
+
+    var remoteHostList = mutableListOf<RemoteHost>()
+
+    if ( args.remoteHostFilename.isEmpty() ) return remoteHostList
+    if ( !File(args.remoteHostFilename).isFile )  return remoteHostList
+
+    var inputStream: InputStream = File(args.remoteHostFilename).inputStream()
+    var lines = mutableListOf<String>()
+
+    inputStream.bufferedReader().useLines { fileLine -> fileLine.forEach { lines.add(it) } }
+
+    lines.forEach {
+        var dd = it.substringBefore("#").trim()
+
+        var sshOptions = RemoteHostOptions(args.sshPrivateKey, args.sshStrictHostKeyChecking, args.sshUser, args.sshDataCompression, 0)
+
+        remoteHostList.add(RemoteHost(dd, RemoteHostState.Unknown, sshOptions))
+    }
+
+    inputStream.close()
+
+    return remoteHostList
+}
+
 fun sslTunnel(currentItem: RemoteHost): Observable<SslContext>? {
     val localSshPort = getNextSshPort()
 
@@ -130,7 +156,7 @@ fun sslTunnel(currentItem: RemoteHost): Observable<SslContext>? {
 
 fun getSslCommandLine(currentItem: RemoteHost, localSshPort: Int): List<String> {
 
-    var sslCommandLine = mutableListOf("ssh")
+    var sslCommandLine = mutableListOf("ssh", "-f")
 
     if(!currentItem.options.pkFile.isNullOrEmpty())
         sslCommandLine.addAll(arrayOf("-i", currentItem.options.pkFile))
@@ -286,30 +312,6 @@ private fun runAllTests(args: Args, testPackage: TestPackage.Valid, testRunner: 
             .first()
 }
 
-fun getRemoteHostList(args: Args): List<RemoteHost> {
-
-    var remoteHostList = mutableListOf<RemoteHost>()
-
-    if ( args.remoteHostFilename.isEmpty() ) return remoteHostList
-    if ( !File(args.remoteHostFilename).isFile )  return remoteHostList
-
-    var inputStream: InputStream = File(args.remoteHostFilename).inputStream()
-    var lines = mutableListOf<String>()
-
-    inputStream.bufferedReader().useLines { fileLine -> fileLine.forEach { lines.add(it) } }
-
-    lines.forEach {
-        var dd = it.substringBefore("#").trim()
-
-        var sshOptions = RemoteHostOptions(args.sshPrivateKey, !args.disableStrictHostKeyChecking, args.sshUser, args.sshDataCompression, 0)
-
-        remoteHostList.add(RemoteHost(dd, RemoteHostState.Unknown, sshOptions))
-    }
-
-    inputStream.close()
-
-    return remoteHostList
-}
 
 private fun List<String>.pairArguments(): List<Pair<String, String>> =
         foldIndexed(mutableListOf()) { index, accumulator, value ->

@@ -69,6 +69,7 @@ data class Args(
         @Parameter(
                 names = arrayOf("--keep-output-on-exit"),
                 required = false,
+                arity = 1,
                 description = "Either `true` or `false` to keep/clean output on exit. `false` by default.",
                 order = 7
         )
@@ -78,7 +79,7 @@ data class Args(
                 names = arrayOf("--remote-hosts-file"),
                 required = false,
                 description = "Provides a list of hostnames to connect to.",
-                order = 10
+                order = 8
         )
         var remoteHostFilename: String = "",
 
@@ -86,7 +87,7 @@ data class Args(
                 names = arrayOf("--ssh-user"),
                 required = false,
                 description = "Specify the user account to use when connecting to remote hosts over ssh",
-                order = 10
+                order = 9
         )
         var sshUser: String = "shell",
 
@@ -99,18 +100,20 @@ data class Args(
         var sshPrivateKey: String = "",
 
         @Parameter(
-                names = arrayOf("--disable-strict-key-checks"),
+                names = arrayOf("--ssh-strict-key-checks"),
                 required = false,
-                description = "Disables StrictHostKeyChecking during the SSH session",
-                order = 10
+                arity = 1,
+                description = "Sets StrictHostKeyChecking during the SSH session",
+                order = 11
         )
-        var disableStrictHostKeyChecking: Boolean = false,
+        var sshStrictHostKeyChecking: Boolean = false,
 
         @Parameter(
                 names = arrayOf("--ssh-data-compression"),
                 required = false,
+                arity = 1,
                 description = "Enable or disable ssh data compression",
-                order = 10
+                order = 12
         )
         var sshDataCompression: Boolean = true,
 
@@ -120,7 +123,7 @@ data class Args(
                 required = false,
                 variableArity = true,
                 description = "Connected devices/emulators that will be used to run tests against. If not passed — tests will run on all connected devices/emulators. Specifying both `--devices` and `--device-pattern` will result in an error. Usage example: `--devices emulator-5554 emulator-5556`.",
-                order = 8
+                order = 13
         )
         var devices: List<String> = emptyList(),
 
@@ -128,7 +131,7 @@ data class Args(
                 names = arrayOf("--device-pattern"),
                 required = false,
                 description = "Connected devices/emulators that will be used to run tests against. If not passed — tests will run on all connected devices/emulators. Specifying both `--device-pattern` and `--devices` will result in an error. Usage example: `--device-pattern \"somePatterns\"`.",
-                order = 9
+                order = 14
         )
         var devicePattern: String = "",
 
@@ -136,7 +139,7 @@ data class Args(
                 names = arrayOf("--install-timeout"),
                 required = false,
                 description = "APK installation timeout in seconds. If not passed defaults to 120 seconds (2 minutes). Applicable to both test APK and APK under test.",
-                order = 10
+                order = 15
         )
         var installTimeoutSeconds: Int = TimeUnit.MINUTES.toSeconds(2).toInt(),
 
@@ -145,7 +148,7 @@ data class Args(
                 required = false,
                 arity = 1,
                 description = "Either `true` or `false` to enable/disable error on empty test suite. True by default.",
-                order = 11
+                order = 16
         )
         var failIfNoTests: Boolean = true
 )
