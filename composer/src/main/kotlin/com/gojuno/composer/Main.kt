@@ -96,10 +96,16 @@ sealed class RemoteHostState {
 
 data class RemoteHost(
         var ip: String,
-        var pkFile: String,
         var state: RemoteHostState,
-        var localSshPort: Int,
-        var localSshProcessId: Int
+        var options: RemoteHostOptions
+)
+
+data class RemoteHostOptions(
+        var pkFile: String,
+        var strictHostKeyChecking: Boolean = true,
+        var user: String = "shell",
+        var dataCompression: Boolean = true,
+        var localSshPort: Int
 )
 
 data class SslContext(var localSshPort: Int)
@@ -123,10 +129,23 @@ fun sslTunnel(currentItem: RemoteHost): Observable<SslContext>? {
 }
 
 fun getSslCommandLine(currentItem: RemoteHost, localSshPort: Int): List<String> {
-    if(currentItem.pkFile.isNullOrEmpty())
-        return listOf("ssh", "-f", "-C", "-NL", "$localSshPort:localhost:5555", "shell@${currentItem.ip}")
-    else
-        return listOf("ssh", "-i", currentItem.pkFile, "-f", "-C", "-NL", "$localSshPort:localhost:5555", "shell@${currentItem.ip}")
+
+    var sslCommandLine = mutableListOf("ssh")
+
+    if(!currentItem.options.pkFile.isNullOrEmpty())
+        sslCommandLine.addAll(arrayOf("-i", currentItem.options.pkFile))
+
+    if(!currentItem.options.strictHostKeyChecking)
+        sslCommandLine.addAll(arrayOf("-o", "StrictHostKeyChecking=no"))
+
+    if(currentItem.options.dataCompression)
+        sslCommandLine.add("-C")
+
+    sslCommandLine.addAll(arrayOf("-NL", "$localSshPort:localhost:5555"))
+
+    sslCommandLine.add("${currentItem.options.user}@${currentItem.ip}")
+
+    return sslCommandLine
 }
 
 fun adbConnect(currentItem: SslContext): Observable<Notification.Exit>? {
@@ -134,7 +153,7 @@ fun adbConnect(currentItem: SslContext): Observable<Notification.Exit>? {
             commandAndArgs = listOf(adb, "connect", "localhost:${currentItem.localSshPort}"),
             unbufferedOutput = true,
             print = false,
-            destroyOnUnsubscribe = false
+            destroyOnUnsubscribe = true
     )
             .retry(3)
             .flatMap { it -> process(
@@ -282,7 +301,9 @@ fun getRemoteHostList(args: Args): List<RemoteHost> {
     lines.forEach {
         var dd = it.substringBefore("#").trim()
 
-        remoteHostList.add(RemoteHost(dd, args.remoteHostPrivateKeyFile, RemoteHostState.Unknown, 0, 0))
+        var sshOptions = RemoteHostOptions(args.sshPrivateKey, !args.disableStrictHostKeyChecking, args.sshUser, args.sshDataCompression, 0)
+
+        remoteHostList.add(RemoteHost(dd, RemoteHostState.Unknown, sshOptions))
     }
 
     inputStream.close()

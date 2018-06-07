@@ -83,12 +83,37 @@ data class Args(
         var remoteHostFilename: String = "",
 
         @Parameter(
+                names = arrayOf("--ssh-user"),
+                required = false,
+                description = "Specify the user account to use when connecting to remote hosts over ssh",
+                order = 10
+        )
+        var sshUser: String = "shell",
+
+        @Parameter(
                 names = arrayOf("--ssh-key"),
                 required = false,
                 description = "Specify the private key file to use when connecting to remote hosts over ssh",
                 order = 10
         )
-        var remoteHostPrivateKeyFile: String = "",
+        var sshPrivateKey: String = "",
+
+        @Parameter(
+                names = arrayOf("--disable-strict-key-checks"),
+                required = false,
+                description = "Disables StrictHostKeyChecking during the SSH session",
+                order = 10
+        )
+        var disableStrictHostKeyChecking: Boolean = false,
+
+        @Parameter(
+                names = arrayOf("--ssh-data-compression"),
+                required = false,
+                description = "Enable or disable ssh data compression",
+                order = 10
+        )
+        var sshDataCompression: Boolean = true,
+
 
         @Parameter(
                 names = arrayOf("--devices"),
@@ -137,6 +162,10 @@ private fun validateArguments(args: Args) {
     }
     if (!args.remoteHostFilename.isEmpty() && !args.devicePattern.isEmpty()) {
         throw IllegalArgumentException("Specifying both --remote-host-filename and --device-pattern is prohibited.")
+    }
+    if(!args.remoteHostFilename.isEmpty()) {
+        if(args.sshUser.isEmpty())
+            throw IllegalArgumentException("Must specify the user to connect with when connecting over ssh.")
     }
 }
 
