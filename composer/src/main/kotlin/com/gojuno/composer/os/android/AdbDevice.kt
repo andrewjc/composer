@@ -95,7 +95,7 @@ fun AdbDevice.installApk(pathToApk: String, timeout: Pair<Int, TimeUnit> = 2 to 
     )
 
     val installApkProcess = process(
-            commandAndArgs = listOf(adb, "-s", adbDevice.id, "shell", "pm", "install", "-t", "-r", "/data/local/tmp/$packageName"),
+            commandAndArgs = listOf(adb, "-s", adbDevice.id, "shell", "pm", "install", "-t", "-r", "-d", "/data/local/tmp/$packageName"),
             unbufferedOutput = true,
             timeout = timeout
     )
